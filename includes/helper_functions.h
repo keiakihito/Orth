@@ -230,9 +230,33 @@ int setRank(float* sngVals_d, int currentRank, float threashold)
 		} // end of if
 	} // end of for
 
+	free(sngVals_h);
+
 	return newRank;
 }
 
+
+//Input: cublasHandler_t cublasHandler, float* matrix X, int number of row, int number of column
+//Process: the function allocate new memory space and tranpose the mtarix X
+//Output: float* matrix X transpose
+float* transpose_Den_mtx(cublasHandle_t cublasHandler, float* mtxX_d, int numOfRow, int numOfClm)
+{	
+	float* mtxXT_d = NULL;
+	const float alpha = 1.0f;
+	const float beta = 0.0f;
+
+	//Allocate a new memory space for mtxXT
+	CHECK(cudaMalloc((void**)&mtxXT_d, numOfRow * numOfClm * sizeof(float)));
+	
+	//Transpose mtxX
+	// checkCudaErrors(cublasSgeam(cublasHandler, CUBLAS_OP_T, CUBLAS_OP_N, COL_A, COL_A, &alpha, mtxVT_d, COL_A, &beta, mtxVT_d, COL_A, mtxV_d, COL_A));
+    checkCudaErrors(cublasSgeam(cublasHandler, CUBLAS_OP_T, CUBLAS_OP_N, numOfRow, numOfClm, &alpha, mtxX_d, numOfRow, &beta, mtxX_d, numOfRow, mtxXT_d, numOfClm));
+
+	//Free memory the original matrix X
+	CHECK(cudaFree(mtxX_d));
+
+	return mtxXT_d;
+}
 
 //Input: float* matrix V, int number of Row and Column, int current rank
 //Process: the functions truncates the matrix V with current rank
