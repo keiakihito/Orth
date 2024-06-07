@@ -156,6 +156,10 @@ void validateSol(const float *mtxA_h, const float* x_h, float* rhs, int N){
 
 
 //Orth functions
+//Input: cusolverDnHandler, int number of row, int number of column, int leading dimensino, 
+//		 float* matrix A, float* matrix U, float* vector singlluar values, float* matrix V tranpose
+//Process: Singluar Value Decomposion
+//Output: float* Matrix U, float* singular value vectors, float* Matrix V transpose
 void SVD_Decmp(cusolverDnHandle_t cusolverHandler, int numOfRow, int numOfClm, int ldngDim, float* mtxA_d, float* mtxU_d, float* sngVals_d, float*mtxVT_d)
 {	
 
@@ -179,6 +183,8 @@ void SVD_Decmp(cusolverDnHandle_t cusolverHandler, int numOfRow, int numOfClm, i
     //all N rows of V**T are returned in the array
     signed char jobVT = 'S';
 
+	//Error cheking after performing SVD decomp
+	int infoGpu = 0;
 
 
 	//(1) Allocate memoery for devInfo
@@ -191,25 +197,75 @@ void SVD_Decmp(cusolverDnHandle_t cusolverHandler, int numOfRow, int numOfClm, i
 
     //(3) Compute SVD decomposition
     checkCudaErrors(cusolverDnSgesvd(cusolverHandler, jobU, jobVT, numOfRow, numOfClm, mtxA_d, ldngDim, sngVals_d, mtxU_d,ldngDim, mtxVT_d, numOfClm, work_d, lwork, rwork_d, devInfo));
+	
+	//(4) Check SVD decomp was successful. 
+	checkCudaErrors(cudaMemcpy(&infoGpu, devInfo, sizeof(int), cudaMemcpyDeviceToHost));
+	if(infoGpu != 0){
+		printf("\n\n😖😖😖Unsuccessful SVD execution😖😖😖\n");
+	}
+
+	//(5) Free memoery
+	checkCudaErrors(cudaFree(work_d));
+	checkCudaErrors(cudaFree(devInfo));
 
 	return;
 }
 
+
+//Input: singluar values, int currnet rank, float threashould
+//Process: Check eigenvalues are greater than threashould, then set new rank
+//Output: int newRank
 int setRank(float* sngVals_d, int currentRank, float threashold)
-{
-	return 0;
+{	
+	int newRank = 0;
+
+	//Allcoate in heap to copy value from device
+	float* sngVals_h = (float*)malloc(currentRank * sizeof(float));
+	// Copy singular values from Device to count eigen values
+	checkCudaErrors(cudaMemcpy(sngVals_h, sngVals_d, currentRank * sizeof(float), cudaMemcpyDeviceToHost));
+
+	for(int wkr = 0; wkr < currentRank; wkr++){
+		if(sngVals_h[wkr] > threashold){
+			newRank++;
+		} // end of if
+	} // end of for
+
+	return newRank;
 }
 
+
+//Input: float* matrix V, int number of Row and Column, int current rank
+//Process: the functions truncates the matrix V with current rank
+//Output: float* matrix V truncated.
 float* truncate_Den_Mtx(float* mtxV_d, int numOfN, int currentRank)
-{
-	return NULL;
+{	
+	//Allocate memoery for truncated matrix V
+	float* mtxV_trnc_d = NULL;
+	CHECK(cudaMalloc((void**)&mtxV_trnc_d, numOfN * currentRank * sizeof(float)));
+
+	//Copy value from the original matrix until valid column vectors
+	CHECK(cudaMemcpy(mtxV_trnc_d, mtxV_d, numOfN * currentRank * sizeof(float), cudaMemcpyDeviceToDevice));
+
+	//Make sure memoery Free full matrix V.
+	CHECK(cudaFree(mtxV_d));
+
+	//Return truncated matrix V.
+	return mtxV_trnc_d;
 }
 
+
+//Input: float* mtxY, product of matrix Z * matrix U, int number of row, int number of column 
+//Process: the function calls kernel and normalize each column vector 
+//Output: float* mtxY_d, which will be updated as normalized matrix Y hat.
 void normalize_mtx_d(float* mtxY_d, int numOfRow, int numOfCol)
 {
 	return;
 }
 
+
+//Input: float* mtxY, product of matrix Z * matrix U, int number of row, int number of column 
+//Process: the kernel normalize each column vector of matrix Y in 2 norm
+//Output: float* mtxY_d, which will be updated as normalized matrix Y hat.
  __global__ void normalizeClmVec(float* mtxY_d, int numOfRow, int numOfCol)
  {
 	return;
