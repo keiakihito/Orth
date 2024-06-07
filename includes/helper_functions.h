@@ -156,6 +156,12 @@ void validateSol(const float *mtxA_h, const float* x_h, float* rhs, int N){
 
 
 //Orth functions
+//TO DO implement and test orth function
+//float* orth()
+// {
+// 	return mtxSrc;
+// }
+
 //Input: cusolverDnHandler, int number of row, int number of column, int leading dimensino, 
 //		 float* matrix A, float* matrix U, float* vector singlluar values, float* matrix V tranpose
 //Process: Singluar Value Decomposion
@@ -235,11 +241,17 @@ int setRank(float* sngVals_d, int currentRank, float threashold)
 	return newRank;
 }
 
+// TO DO implement and test matrix multiplication in cublas
+void mutiply_Den_mtx_mtx()
+{
+
+}
+
 
 //Input: cublasHandler_t cublasHandler, float* matrix X, int number of row, int number of column
 //Process: the function allocate new memory space and tranpose the mtarix X
 //Output: float* matrix X transpose
-float* transpose_Den_mtx(cublasHandle_t cublasHandler, float* mtxX_d, int numOfRow, int numOfClm)
+float* transpose_Den_Mtx(cublasHandle_t cublasHandler, float* mtxX_d, int numOfRow, int numOfClm)
 {	
 	float* mtxXT_d = NULL;
 	const float alpha = 1.0f;

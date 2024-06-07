@@ -16,7 +16,7 @@
 // helper function CUDA error checking and initialization
 #include "includes/helper_cuda.h"  
 #include "includes/helper_functions.h"
-#include "test_cases/SVD_Decomp_test_cases.h"
+#include "test_cases/orth_test_cases.h"
 
 #define CHECK(call){ \
     const cudaError_t cuda_ret = call; \
@@ -54,6 +54,8 @@ int main(int argc, char** argv)
     // truncate_Den_Mtx_Test();
 
     normalize_mtx_d_Test();
+
+
     
 }// end of main
 
@@ -151,8 +153,17 @@ void normalize_mtx_d_Test()
     // printf("\n\n🔍🔍🔍Test case 4🔍🔍🔍\n");
     // normalize_Den_Mtx_Case4();
 
-    printf("\n\n🔍🔍🔍Test case 5🔍🔍🔍\n");
-    normalize_Den_Mtx_Case5();
+    // printf("\n\n🔍🔍🔍Test case 5🔍🔍🔍\n");
+    // normalize_Den_Mtx_Case5();
 
 
 } // end of normalize_mtx_d_Test
+
+
+void orth_test()
+{
+    printf("\n\n~~orth_Test()~~\n\n");
+    // printf("\n\n🔍🔍🔍Test case 1🔍🔍🔍\n");
+    // orth_test_Case1();
+
+}

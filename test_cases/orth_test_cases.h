@@ -1,5 +1,5 @@
-#ifndef SVD_DECOMP_TEST_CASES_H
-#define SVD_DECOMP_TEST_CASES_H
+#ifndef ORTH_TEST_CASES_H
+#define ORTH_TEST_CASES_H
 
 
 #include <iostream>
@@ -9,6 +9,19 @@
 #include <cusolverDn.h>
 #include <cublas_v2.h>
 
+#include "../includes/helper_debug.h"
+#include "../includes/helper_cuda.h"
+#include "../includes/helper_functions.h"
+
+
+#define CHECK(call){ \
+    const cudaError_t cuda_ret = call; \
+    if(cuda_ret != cudaSuccess){ \
+        printf("Error: %s:%d,  ", __FILE__, __LINE__ );\
+        printf("code: %d, reason: %s \n", cuda_ret, cudaGetErrorString(cuda_ret));\
+        exit(-1); \
+    }\
+}
 
 //SVD_Decompostion test cases
 void SVD_Decomp_Case1()
@@ -1013,7 +1026,7 @@ void truncate_Den_Mtx_Case1()
 
     //Transpose mtxVT -> mtxV
     //Matrix VT and matrix V are both n by n.
-    mtxV_d = transpose_Den_mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
+    mtxV_d = transpose_Den_Mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
 
 
     if(debug){
@@ -1110,7 +1123,7 @@ void truncate_Den_Mtx_Case2()
 
     //Transpose mtxVT -> mtxV
     //Matrix VT and matrix V are both n by n.
-    mtxV_d = transpose_Den_mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
+    mtxV_d = transpose_Den_Mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
 
 
 
@@ -1211,7 +1224,7 @@ void truncate_Den_Mtx_Case3()
 
     //Transpose mtxVT -> mtxV
     //Matrix VT and matrix V are both n by n.
-    mtxV_d = transpose_Den_mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
+    mtxV_d = transpose_Den_Mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
 
 
 
@@ -1315,7 +1328,7 @@ void truncate_Den_Mtx_Case4()
 
     //Transpose mtxVT -> mtxV
     //Matrix VT and matrix V are both n by n.
-    mtxV_d = transpose_Den_mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
+    mtxV_d = transpose_Den_Mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
 
 
     if(debug){
@@ -1429,7 +1442,7 @@ void truncate_Den_Mtx_Case5()
 
     //Transpose mtxVT -> mtxV
     //Matrix VT and matrix V are both n by n.
-    mtxV_d = transpose_Den_mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
+    mtxV_d = transpose_Den_Mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
 
 
 
@@ -1541,7 +1554,7 @@ void normalize_Den_Mtx_Case1()
 
     //Transpose mtxVT -> mtxV
     //Matrix VT and matrix V are both n by n.
-    mtxV_d = transpose_Den_mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
+    mtxV_d = transpose_Den_Mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
 
 
     if(debug){
@@ -1649,7 +1662,7 @@ void normalize_Den_Mtx_Case2()
 
     //Transpose mtxVT -> mtxV
     //Matrix VT and matrix V are both n by n.
-    mtxV_d = transpose_Den_mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
+    mtxV_d = transpose_Den_Mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
 
 
 
@@ -1762,7 +1775,7 @@ void normalize_Den_Mtx_Case3()
 
     //Transpose mtxVT -> mtxV
     //Matrix VT and matrix V are both n by n.
-    mtxV_d = transpose_Den_mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
+    mtxV_d = transpose_Den_Mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
 
 
 
@@ -1878,7 +1891,7 @@ void normalize_Den_Mtx_Case4()
 
     //Transpose mtxVT -> mtxV
     //Matrix VT and matrix V are both n by n.
-    mtxV_d = transpose_Den_mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
+    mtxV_d = transpose_Den_Mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
 
 
 
@@ -2006,7 +2019,7 @@ void normalize_Den_Mtx_Case5()
 
     //Transpose mtxVT -> mtxV
     //Matrix VT and matrix V are both n by n.
-    mtxV_d = transpose_Den_mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
+    mtxV_d = transpose_Den_Mtx(cublasHandler, mtxVT_d, COL_A, COL_A);
 
 
 
@@ -2051,4 +2064,38 @@ void normalize_Den_Mtx_Case5()
     printf("\n= = = End of Case  = = = \n\n");
 
 }// end of normalize_Den_Mtx_Case5
-#endif // SVD_DECOMP_TEST_CASES_H
+
+
+
+
+
+// Test for orth
+void orth_test_Case1()
+{
+
+}// end of orth_test_Case1()
+
+void orth_test_Case2()
+{
+
+}// end of orth_test_Case2()
+
+
+void orth_test_Case3()
+{
+
+}// end of orth_test_Case3()
+
+void orth_test_Case4()
+{
+
+}// end of orth_test_Case4()
+
+void orth_test_Case5()
+{
+
+}// end of orth_test_Case5()
+
+
+
+#endif // ORTH_TEST_CASES_H
