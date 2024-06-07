@@ -52,8 +52,9 @@ int main(int argc, char** argv)
     // setRank_Test();
 
     // truncate_Den_Mtx_Test();
-    
+
     normalize_mtx_d_Test();
+    
 }// end of main
 
 
@@ -112,22 +113,22 @@ void setRank_Test()
 
 void truncate_Den_Mtx_Test()
 {   
-    printf("\n\n~~truncate_Den_Mtx_Test()~~\n\n");
+    // printf("\n\n~~truncate_Den_Mtx_Test()~~\n\n");
 
-    printf("\n\n🔍🔍🔍Test case 1🔍🔍🔍\n");
-    truncate_Den_Mtx_Case1();
+    // printf("\n\n🔍🔍🔍Test case 1🔍🔍🔍\n");
+    // truncate_Den_Mtx_Case1();
 
-    printf("\n\n🔍🔍🔍Test case 2🔍🔍🔍\n");
-    truncate_Den_Mtx_Case2();
+    // printf("\n\n🔍🔍🔍Test case 2🔍🔍🔍\n");
+    // truncate_Den_Mtx_Case2();
 
-    printf("\n\n🔍🔍🔍Test case 3🔍🔍🔍\n");
-    truncate_Den_Mtx_Case3();
+    // printf("\n\n🔍🔍🔍Test case 3🔍🔍🔍\n");
+    // truncate_Den_Mtx_Case3();
 
-    printf("\n\n🔍🔍🔍Test case 4🔍🔍🔍\n");
-    truncate_Den_Mtx_Case4();
+    // printf("\n\n🔍🔍🔍Test case 4🔍🔍🔍\n");
+    // truncate_Den_Mtx_Case4();
 
-    printf("\n\n🔍🔍🔍Test case 5🔍🔍🔍\n");
-    truncate_Den_Mtx_Case5();
+    // printf("\n\n🔍🔍🔍Test case 5🔍🔍🔍\n");
+    // truncate_Den_Mtx_Case5();
 
 } // end of truncate_Den_Mtx_Test
 
@@ -136,5 +137,22 @@ void truncate_Den_Mtx_Test()
 
 void normalize_mtx_d_Test()
 {
-    return;
+    printf("\n\n~~normalize_mtx_d_Test()~~\n\n");
+
+    // printf("\n\n🔍🔍🔍Test case 1🔍🔍🔍\n");
+    // normalize_Den_Mtx_Case1();
+
+    // printf("\n\n🔍🔍🔍Test case 2🔍🔍🔍\n");
+    // normalize_Den_Mtx_Case2();
+
+    // printf("\n\n🔍🔍🔍Test case 3🔍🔍🔍\n");
+    // normalize_Den_Mtx_Case3();
+
+    // printf("\n\n🔍🔍🔍Test case 4🔍🔍🔍\n");
+    // normalize_Den_Mtx_Case4();
+
+    printf("\n\n🔍🔍🔍Test case 5🔍🔍🔍\n");
+    normalize_Den_Mtx_Case5();
+
+
 } // end of normalize_mtx_d_Test

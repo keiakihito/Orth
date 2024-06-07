@@ -278,13 +278,6 @@ float* truncate_Den_Mtx(float* mtxV_d, int numOfN, int currentRank)
 }
 
 
-//Input: float* mtxY, product of matrix Z * matrix U, int number of row, int number of column 
-//Process: the function calls kernel and normalize each column vector 
-//Output: float* mtxY_d, which will be updated as normalized matrix Y hat.
-void normalize_mtx_d(float* mtxY_d, int numOfRow, int numOfCol)
-{
-	return;
-}
 
 
 //Input: float* mtxY, product of matrix Z * matrix U, int number of row, int number of column 
@@ -292,7 +285,58 @@ void normalize_mtx_d(float* mtxY_d, int numOfRow, int numOfCol)
 //Output: float* mtxY_d, which will be updated as normalized matrix Y hat.
  __global__ void normalizeClmVec(float* mtxY_d, int numOfRow, int numOfCol)
  {
-	return;
- }
+	// TO DO optimize with shared memory
+
+	//Calcualte global memory trhead ID
+	int glbCol = blockIdx.x * blockDim.x + threadIdx.x;
+	//Set boundry condition
+	if(glbCol < numOfCol){
+		// printf("glbCol %d\n", glbCol);
+		//Calculate the L2 norm of the column
+		float sqrSum = 0.0f;
+
+		//sum of (column value)^2
+		for (int wkr = 0; wkr < numOfRow; wkr++){
+			// printf("mtxY_d[%d] =  %f\n", wkr,  mtxY_d [glbCol * numOfRow + wkr]);
+			sqrSum += mtxY_d [glbCol * numOfRow + wkr] * mtxY_d [glbCol * numOfRow + wkr];
+		}
+		// printf("sqrSum %f\n", sqrSum);
+
+		// scalar = 1 / √sum of (column value)^2  
+		float normScaler = 1.0f /  sqrtf(sqrSum);
+
+		// printf("normScaler %f\n", normScaler);
+
+		//Normalize column value	
+		if(normScaler > 0.0f){
+			for (int wkr = 0; wkr < numOfRow; wkr++){
+				float nrmVal = mtxY_d[ glbCol * numOfRow + wkr] * normScaler;
+				// printf("nrmVal %f\n", nrmVal);
+				mtxY_d[ glbCol * numOfRow + wkr] = nrmVal;
+			} // enf of for
+		} // end of if normlize column vector 
+	} // end of if boundry condition
+
+ } // end of normalizeClmVec
+
+
+//Input: float* mtxY, product of matrix Z * matrix U, int number of row, int number of column 
+//Process: the function calls kernel and normalize each column vector 
+//Output: float* mtxY_d, which will be updated as normalized matrix Y hat.
+void normalize_Den_Mtx(float* mtxY_d, int numOfRow, int numOfCol)
+{		
+	// dim3 blockDim(32, 32);
+	// dim3 gridDim(ceil((float)numOfCol / blockDim.x), ceil((float)numOfRow/blockDim.y));
+	// normalizeClmVec<<<gridDim, blockDim>>>(mtxY_d, numOfRow, numOfCol);
+	
+	// Use a 1D block and grid configuration
+    int blockSize = 1024; // Number of threads per block
+    int gridSize = ceil((float)numOfCol / blockSize); // Number of blocks needed
+
+    normalizeClmVec<<<gridSize, blockSize>>>(mtxY_d, numOfRow, numOfCol);
+    
+	cudaDeviceSynchronize(); // Ensure the kernel execution completes before proceeding
+}
+
 
 #endif // HELPER_FUNCTIONS_H
