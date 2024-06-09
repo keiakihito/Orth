@@ -242,8 +242,16 @@ int setRank(float* sngVals_d, int currentRank, float threashold)
 }
 
 // TO DO implement and test matrix multiplication in cublas
-void mutiply_Den_mtx_mtx()
-{
+//Input matrix should be column major
+//Input: cubasHandle_t cublasHandler, float* matrix A in device, float* matrix B in device , float* result matrix C in device, int leading dimension A, in leading dimension B
+//Process: matrix multiplication matrix A and matrix B
+//Result: matrix C as a result
+void multiply_Den_ClmM_mtx_mtx(cublasHandle_t cublasHandler, float* mtxA_d, float* mtxB_d, float* mtxC_d, int numOfRowA, int numOfColB, int numOfColA)
+{	
+	const float alpha = 1.0f;
+	const float beta = 0.0f;
+
+	checkCudaErrors(cublasSgemm(cublasHandler, CUBLAS_OP_N, CUBLAS_OP_N, numOfRowA, numOfColB, numOfColA, &alpha, mtxA_d, numOfRowA, mtxB_d, numOfColA, &beta, mtxC_d, numOfRowA));
 
 }
 

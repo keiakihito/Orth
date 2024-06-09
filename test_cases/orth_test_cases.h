@@ -1510,6 +1510,8 @@ void normalize_Den_Mtx_Case1()
     const float THREASHOLD = 1e-5;
 
     float *mtxA_d = NULL;
+    float *mtxA_cpy_d = NULL;
+    float *mtxY_d = NULL;
     float *mtxU_d = NULL;
     float *sngVals_d = NULL; // Singular values
     float *mtxV_d = NULL; // Need to allocate a separate memory buffer for the transposed matrix.
@@ -1522,6 +1524,7 @@ void normalize_Den_Mtx_Case1()
 
     //(1) Allocate device memory
     CHECK((cudaMalloc((void**)&mtxA_d, ROW_A * COL_A *sizeof(float))));
+    CHECK(cudaMalloc((void**)&mtxA_cpy_d, ROW_A * COL_A * sizeof(float))); // Allocate memory for copy
     CHECK((cudaMalloc((void**)&mtxU_d, LD_A * COL_A * sizeof(float))));
     CHECK((cudaMalloc((void**)&sngVals_d, COL_A * sizeof(float))));
     CHECK((cudaMalloc((void**)&mtxVT_d, COL_A * COL_A * sizeof(float))));
@@ -1529,6 +1532,7 @@ void normalize_Den_Mtx_Case1()
 
     //(2) Copy value to device
     CHECK((cudaMemcpy(mtxA_d, mtxA, ROW_A * COL_A * sizeof(float), cudaMemcpyHostToDevice)));
+    CHECK((cudaMemcpy(mtxA_cpy_d, mtxA, ROW_A * COL_A * sizeof(float), cudaMemcpyHostToDevice)));
     
     if(debug){
         printf("\n\n~~~MtxA~~~\n");
@@ -1569,17 +1573,44 @@ void normalize_Den_Mtx_Case1()
 
     int newRank = setRank(sngVals_d, COL_A, THREASHOLD);
 
-    if(newRank < COL_A){
-        mtxV_trnc_d = truncate_Den_Mtx(mtxV_d, COL_A, newRank);
-        printf("\n\n~~mtxV_trnc_d\n");
+
+    mtxV_trnc_d = truncate_Den_Mtx(mtxV_d, COL_A, newRank);
+    printf("\n\n~~mtxV_trnc_d\n");
+    print_mtx_clm_d(mtxV_trnc_d, COL_A, newRank);
+
+    //Set up matrix Y with new rankv for matrix multiplication reult 
+    CHECK(cudaMalloc((void**)&mtxY_d, ROW_A * newRank *sizeof(float)));
+    CHECK(cudaMemset(mtxY_d, 0, ROW_A * newRank * sizeof(float)));
+
+    if(debug){
+        printf("\n\n~~mtxY ~~\n");
+        print_mtx_clm_d(mtxY_d, ROW_A, newRank);
+        printf("\n\n~~mtxA ~~\n");
+        print_mtx_clm_d(mtxA_d, ROW_A, COL_A);
+        printf("\n\n~~mtxA Copy~~\n");
+        print_mtx_clm_d(mtxA_cpy_d, ROW_A, COL_A);
+        printf("\n\n~~mtxV_trnc ~~\n");
         print_mtx_clm_d(mtxV_trnc_d, COL_A, newRank);
     }
 
-    //Normalize mtxV
-    normalize_Den_Mtx(mtxV_d, COL_A, newRank);
+
+    //mtxY <- mtxZ * mtxV_trnc
+    multiply_Den_ClmM_mtx_mtx(cublasHandler, mtxA_cpy_d, mtxV_trnc_d, mtxY_d, ROW_A, newRank, COL_A);
+    // float alpha = 1.0f;
+    // float beta = 0.0f;
+    // checkCudaErrors(cublasSgemm(cublasHandler, CUBLAS_OP_N, CUBLAS_OP_N, ROW_A, newRank, COL_A, &alpha, mtxA_cpy_d, LD_A, mtxV_trnc_d, COL_A, &beta, mtxY_d, ROW_A));
     if(debug){
-        printf("\n\n~~mtxV normalize\n");
-        print_mtx_clm_d(mtxV_d, COL_A, newRank);
+        printf("\n\n~~mtxY ~~\n");
+        print_mtx_clm_d(mtxY_d, ROW_A, newRank);
+    }
+
+
+
+    //Normalize mtxY
+    normalize_Den_Mtx(mtxY_d, ROW_A, newRank);
+    if(debug){
+        printf("\n\n~~mtxY_hat~~\n");
+        print_mtx_clm_d(mtxY_d, ROW_A, newRank);
     }
 
 
@@ -1588,10 +1619,12 @@ void normalize_Den_Mtx_Case1()
     checkCudaErrors(cublasDestroy(cublasHandler));
 
     CHECK(cudaFree(mtxA_d));
+    CHECK(cudaFree(mtxA_cpy_d));
+    CHECK(cudaFree(mtxY_d));
     CHECK(cudaFree(mtxU_d));
     CHECK(cudaFree(sngVals_d));
-    CHECK(cudaFree(mtxV_d));
     CHECK(cudaFree(mtxV_trnc_d));
+
 
     printf("\n= = = End of Case  = = = \n\n");
 } // end of normalize_Den_Mtx_Case1()
