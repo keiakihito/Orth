@@ -42,6 +42,7 @@ void SVD_Decomp_Test();
 void setRank_Test();
 void truncate_Den_Mtx_Test();
 void normalize_mtx_d_Test();
+void orth_test();
 
 
 
@@ -53,7 +54,9 @@ int main(int argc, char** argv)
 
     // truncate_Den_Mtx_Test();
 
-    normalize_mtx_d_Test();
+    // normalize_mtx_d_Test();
+
+    orth_test();
 
 
     
@@ -163,7 +166,7 @@ void normalize_mtx_d_Test()
 void orth_test()
 {
     printf("\n\n~~orth_Test()~~\n\n");
-    // printf("\n\n🔍🔍🔍Test case 1🔍🔍🔍\n");
-    // orth_test_Case1();
+    printf("\n\n🔍🔍🔍Test case 1🔍🔍🔍\n");
+    orth_test_Case1();
 
 }

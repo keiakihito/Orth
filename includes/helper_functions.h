@@ -20,9 +20,70 @@
     }\
 }
 
+//function headers
+//Generate random SPD dense matrix
+// N is matrix size
+float* generateSPD_DenseMatrix(int N);
+
+// N is matrix size
+float* generate_TriDiagMatrix(int N);
+
+
+void validateSol(const float *mtxA_h, const float* x_h, float* rhs, int N);
+
+//Input: float* mtxZ, int number of Row, int number Of column, int & currentRank
+//Process: the function extracts orthonormal set from the matrix Z
+//Output: float* mtxY_hat, the orthonormal set of matrix Z.
+float* orth(float* mtxZ_d, int numOfRow, int numOfClm, int &currentRank);
+
+//Input: cusolverDnHandler, int number of row, int number of column, int leading dimensino, 
+//		 float* matrix A, float* matrix U, float* vector singlluar values, float* matrix V tranpose
+//Process: Singluar Value Decomposion
+//Output: float* Matrix U, float* singular value vectors, float* Matrix V transpose
+void SVD_Decmp(cusolverDnHandle_t cusolverHandler, int numOfRow, int numOfClm, int ldngDim, float* mtxA_d, float* mtxU_d, float* sngVals_d, float*mtxVT_d);
+
+//Input: singluar values, int currnet rank, float threashould
+//Process: Check eigenvalues are greater than threashould, then set new rank
+//Output: int newRank
+int setRank(float* sngVals_d, int currentRank, float threashold);
+
+//Input matrix should be column major
+//Input: cubasHandle_t cublasHandler, float* matrix A in device, float* matrix B in device , float* result matrix C in device, int leading dimension A, in leading dimension B
+//Process: matrix multiplication matrix A and matrix B
+//Result: matrix C as a result
+void multiply_Den_ClmM_mtx_mtx(cublasHandle_t cublasHandler, float* mtxA_d, float* mtxB_d, float* mtxC_d, int numOfRowA, int numOfColB, int numOfColA);
+
+//Input matrix should be column major
+//Input: cubasHandle_t cublasHandler, float* matrix A in device, float* matrix B in device , float* result matrix C in device, int number of Row, int number of column
+//Process: matrix multiplication matrix A' * matrix A
+//Result: matrix C as a result with square matrix
+void multiply_Den_ClmM_mtxT_mtx(cublasHandle_t cublasHandler, float* mtxA_d, float* mtxC_d, int numOfRow, int numOfClm);
+
+
+//Input: cublasHandler_t cublasHandler, float* matrix X, int number of row, int number of column
+//Process: the function allocate new memory space and tranpose the mtarix X
+//Output: float* matrix X transpose
+float* transpose_Den_Mtx(cublasHandle_t cublasHandler, float* mtxX_d, int numOfRow, int numOfClm);
+
+//Input: float* matrix V, int number of Row and Column, int current rank
+//Process: the functions truncates the matrix V with current rank
+//Output: float* matrix V truncated.
+float* truncate_Den_Mtx(float* mtxV_d, int numOfN, int currentRank);
+
+//Input: float* mtxY, product of matrix Z * matrix U, int number of row, int number of column 
+//Process: the kernel normalize each column vector of matrix Y in 2 norm
+//Output: float* mtxY_d, which will be updated as normalized matrix Y hat.
+__global__ void normalizeClmVec(float* mtxY_d, int numOfRow, int numOfCol);
+
+
+//Input: float* mtxY, product of matrix Z * matrix U, int number of row, int number of column 
+//Process: the function calls kernel and normalize each column vector 
+//Output: float* mtxY_d, which will be updated as normalized matrix Y hat.
+void normalize_Den_Mtx(float* mtxY_d, int numOfRow, int numOfCol);
 
 
 
+//Function signatures
 //Generate random SPD dense matrix
 // N is matrix size
 float* generateSPD_DenseMatrix(int N){
@@ -157,10 +218,131 @@ void validateSol(const float *mtxA_h, const float* x_h, float* rhs, int N){
 
 //Orth functions
 //TO DO implement and test orth function
-//float* orth()
-// {
-// 	return mtxSrc;
-// }
+//Input: float* mtxZ, int number of Row, int number Of column, int & currentRank
+//Process: the function extracts orthonormal set from the matrix Z
+//Output: float* mtxY_hat, the orthonormal set of matrix Z.
+float* orth(float* mtxZ_d, int numOfRow, int numOfClm, int &currentRank)
+{	
+	/*
+	Pseudocode
+	// Mayby need to make a copy of mtxZ
+	Transpose Z
+	Multiply mtxS <- mtxZ' * mtxZ
+	Perform SVD
+	Transpoze mtxVT, and get mtxV
+	Call set Rank
+	if(newRank < currentRank){
+		Trancate mtxV
+		currentRank <- newRank
+	}else{
+		continue;
+	}
+	Mutiply mtxY <- mtxZ * mtxV 
+	Normalize mtxY <- mtxY
+	Return mtxY
+	*/
+
+	float *mtxY_d = NULL; // Orthonormal set, serach diretion
+	float *mtxZ_cpy_d = NULL; // Need a copy to tranpose mtxZ'
+	float *mtxS_d = NULL;
+
+	float *mtxU_d = NULL;
+	float *sngVals_d = NULL;
+	float *mtxV_d = NULL;
+	float *mtxVT_d = NULL;
+	float *mtxV_trnc_d = NULL;
+
+	const float THREASHOLD = 1e-5;
+
+	bool debug = true;
+
+
+
+
+	if(debug){
+		printf("\n\n~~mtxZ~~\n\n");
+		print_mtx_clm_d(mtxZ_d, numOfRow, numOfClm);
+	}
+
+
+	//(1) Allocate memeory in device
+	//Make a copy of mtxZ for mtxZ'
+    CHECK(cudaMalloc((void**)&mtxZ_cpy_d, numOfRow * numOfClm * sizeof(float)));
+	CHECK(cudaMalloc((void**)&mtxS_d, numOfRow * numOfClm * sizeof(float)));
+	
+	//For SVD decomposition
+	CHECK(cudaMalloc((void**)&mtxU_d, numOfRow * numOfClm * sizeof(float)));
+	CHECK(cudaMalloc((void**)&sngVals_d, numOfClm * sizeof(float)));
+	CHECK(cudaMalloc((void**)&mtxVT_d, numOfClm * numOfClm * sizeof(float)));
+
+	//(2) Copy value to device
+	CHECK(cudaMemcpy(mtxZ_cpy_d, mtxZ_d, numOfRow * numOfClm * sizeof(float), cudaMemcpyDeviceToDevice));
+	
+	
+	if(debug){
+		printf("\n\n~~mtxZ cpy~~\n\n");
+		print_mtx_clm_d(mtxZ_cpy_d, numOfRow, numOfClm);
+	}
+
+	//(3) Create handler
+    cusolverDnHandle_t cusolverHandler = NULL;
+    cublasHandle_t cublasHandler = NULL;
+
+    checkCudaErrors(cusolverDnCreate(&cusolverHandler));
+    checkCudaErrors(cublasCreate(&cublasHandler));
+
+	//(4) Perform orthonormal set prodecure
+	//(4.1) Mutiply mtxS <- mtxZ' * mtxZ
+	//mtxZ_cpy will be free after multiplication
+	multiply_Den_ClmM_mtxT_mtx(cublasHandler, mtxZ_cpy_d, mtxS_d, numOfRow, numOfClm);
+
+	if(debug){
+		printf("\n\n~~mtxS ~~\n\n");
+		print_mtx_clm_d(mtxS_d, numOfClm, numOfClm);
+	}
+
+	//(4.2)SVD Decomposition
+	SVD_Decmp(cusolverHandler, numOfClm, numOfClm, numOfClm, mtxS_d, mtxU_d, sngVals_d, mtxVT_d);
+	if(debug){
+		printf("\n\n~~mtxU ~~\n\n");
+		print_mtx_clm_d(mtxU_d, numOfClm, numOfClm);
+		printf("\n\n~~sngVals ~~\n\n");
+		print_mtx_clm_d(sngVals_d, numOfClm, 1);
+		printf("\n\n~~mtxVT ~~\n\n");
+		print_mtx_clm_d(mtxVT_d, numOfClm, numOfClm);
+	}	
+
+	//(4.3) Transpose mtxV <- mtxVT'
+	mtxV_d = transpose_Den_Mtx(cublasHandler, mtxVT_d, numOfClm, numOfClm);
+	if(debug){
+		printf("\n\n~~mtxV ~~\n\n");
+		print_mtx_clm_d(mtxV_d, numOfClm, numOfClm);
+	}	
+
+	//(4.4) Set current rank
+	currentRank = setRank(sngVals_d, currentRank, THREASHOLD);
+	if(debug){
+		printf("\n\n~~ new rank = %d ~~\n\n", currentRank);
+	}
+
+	//(4.5) Truncate matrix V
+	//mtxV_d will be free after truncate_Den_Mtx
+	mtxV_trnc_d = truncate_Den_Mtx(mtxV_d, numOfClm, currentRank);
+		
+	if(debug){
+		printf("\n\n~~mtxV_Trnc ~~\n\n");
+		print_mtx_clm_d(mtxV_trnc_d, numOfClm, currentRank);
+	}	
+
+	//(4.6) Multiply matrix Y <- matrix Z * matrix V Truncated
+	multiply_Den_ClmM_mtx_mtx(cublasHandler, mtxZ_d, mtxV_trnc_d, mtxY_d, numOfRow, currentRank, numOfClm);
+	if(debug){
+		printf("\n\n~~mtxY ~~\n\n");
+		print_mtx_clm_d(mtxY_d, numOfRow, currentRank);
+	}	
+
+	return mtxY_d;
+}
 
 //Input: cusolverDnHandler, int number of row, int number of column, int leading dimensino, 
 //		 float* matrix A, float* matrix U, float* vector singlluar values, float* matrix V tranpose
@@ -168,6 +350,8 @@ void validateSol(const float *mtxA_h, const float* x_h, float* rhs, int N){
 //Output: float* Matrix U, float* singular value vectors, float* Matrix V transpose
 void SVD_Decmp(cusolverDnHandle_t cusolverHandler, int numOfRow, int numOfClm, int ldngDim, float* mtxA_d, float* mtxU_d, float* sngVals_d, float*mtxVT_d)
 {	
+	//Make a copy of matrix A to aboid value changing though SVD Decomposion
+	float* mtxA_cpy_d = NULL;
 
 	/*The devInfo is an integer pointer
     It points to device memory where cuSOLVER can store information 
@@ -193,7 +377,10 @@ void SVD_Decmp(cusolverDnHandle_t cusolverHandler, int numOfRow, int numOfClm, i
 	int infoGpu = 0;
 
 
-	//(1) Allocate memoery for devInfo
+	//(1) Allocate memoery, and copy value
+	CHECK(cudaMalloc((void**)&mtxA_cpy_d, numOfRow * numOfClm * sizeof(float))); 
+	CHECK(cudaMemcpy(mtxA_cpy_d, mtxA_d, numOfRow * numOfClm * sizeof(float), cudaMemcpyDeviceToDevice));
+
 	CHECK((cudaMalloc((void**)&devInfo, sizeof(int))));
 
 	//(2) Calculate workspace for SVD decompositoin
@@ -202,7 +389,7 @@ void SVD_Decmp(cusolverDnHandle_t cusolverHandler, int numOfRow, int numOfClm, i
 
 
     //(3) Compute SVD decomposition
-    checkCudaErrors(cusolverDnSgesvd(cusolverHandler, jobU, jobVT, numOfRow, numOfClm, mtxA_d, ldngDim, sngVals_d, mtxU_d,ldngDim, mtxVT_d, numOfClm, work_d, lwork, rwork_d, devInfo));
+    checkCudaErrors(cusolverDnSgesvd(cusolverHandler, jobU, jobVT, numOfRow, numOfClm, mtxA_cpy_d, ldngDim, sngVals_d, mtxU_d,ldngDim, mtxVT_d, numOfClm, work_d, lwork, rwork_d, devInfo));
 	
 	//(4) Check SVD decomp was successful. 
 	checkCudaErrors(cudaMemcpy(&infoGpu, devInfo, sizeof(int), cudaMemcpyDeviceToHost));
@@ -213,6 +400,7 @@ void SVD_Decmp(cusolverDnHandle_t cusolverHandler, int numOfRow, int numOfClm, i
 	//(5) Free memoery
 	checkCudaErrors(cudaFree(work_d));
 	checkCudaErrors(cudaFree(devInfo));
+	checkCudaErrors(cudaFree(mtxA_cpy_d));
 
 	return;
 }
@@ -241,7 +429,6 @@ int setRank(float* sngVals_d, int currentRank, float threashold)
 	return newRank;
 }
 
-// TO DO implement and test matrix multiplication in cublas
 //Input matrix should be column major
 //Input: cubasHandle_t cublasHandler, float* matrix A in device, float* matrix B in device , float* result matrix C in device, int leading dimension A, in leading dimension B
 //Process: matrix multiplication matrix A and matrix B
@@ -255,6 +442,18 @@ void multiply_Den_ClmM_mtx_mtx(cublasHandle_t cublasHandler, float* mtxA_d, floa
 
 }
 
+
+//Input matrix should be column major
+//Input: cubasHandle_t cublasHandler, float* matrix A in device, float* matrix B in device , float* result matrix C in device, int number of Row, int number of column
+//Process: matrix multiplication matrix A' * matrix A
+//Result: matrix C as a result with square matrix
+void multiply_Den_ClmM_mtxT_mtx(cublasHandle_t cublasHandler, float* mtxA_d, float* mtxC_d, int numOfRow, int numOfClm)
+{
+	const float alpha = 1.0f;
+	const float beta = 0.0f;
+	checkCudaErrors(cublasSgemm(cublasHandler, CUBLAS_OP_T, CUBLAS_OP_N, numOfClm, numOfClm, numOfRow, &alpha, mtxA_d, numOfRow, mtxA_d, numOfRow, &beta, mtxC_d, numOfClm));
+	CHECK(cudaFree(mtxA_d));
+}
 
 //Input: cublasHandler_t cublasHandler, float* matrix X, int number of row, int number of column
 //Process: the function allocate new memory space and tranpose the mtarix X
@@ -270,7 +469,7 @@ float* transpose_Den_Mtx(cublasHandle_t cublasHandler, float* mtxX_d, int numOfR
 	
 	//Transpose mtxX
 	// checkCudaErrors(cublasSgeam(cublasHandler, CUBLAS_OP_T, CUBLAS_OP_N, COL_A, COL_A, &alpha, mtxVT_d, COL_A, &beta, mtxVT_d, COL_A, mtxV_d, COL_A));
-    checkCudaErrors(cublasSgeam(cublasHandler, CUBLAS_OP_T, CUBLAS_OP_N, numOfRow, numOfClm, &alpha, mtxX_d, numOfRow, &beta, mtxX_d, numOfRow, mtxXT_d, numOfClm));
+    checkCudaErrors(cublasSgeam(cublasHandler, CUBLAS_OP_T, CUBLAS_OP_N, numOfRow, numOfClm, &alpha, mtxX_d, numOfClm, &beta, mtxX_d, numOfRow, mtxXT_d, numOfRow));
 
 	//Free memory the original matrix X
 	CHECK(cudaFree(mtxX_d));
