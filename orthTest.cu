@@ -166,7 +166,19 @@ void normalize_mtx_d_Test()
 void orth_test()
 {
     printf("\n\n~~orth_Test()~~\n\n");
-    printf("\n\n🔍🔍🔍Test case 1🔍🔍🔍\n");
-    orth_test_Case1();
 
+    // printf("\n\n🔍🔍🔍Test case 1🔍🔍🔍\n");
+    // orth_test_Case1();
+    
+    printf("\n\n🔍🔍🔍Test case 2🔍🔍🔍\n");
+    orth_test_Case2();
+
+    // printf("\n\n🔍🔍🔍Test case 3🔍🔍🔍\n");
+    // orth_test_Case3();
+
+    // printf("\n\n🔍🔍🔍Test case 4🔍🔍🔍\n");
+    // orth_test_Case4();
+
+    // printf("\n\n🔍🔍🔍Test case 5🔍🔍🔍\n");
+    // orth_test_Case5();
 }
