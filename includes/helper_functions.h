@@ -313,6 +313,7 @@ float* orth(float* mtxZ_d, int numOfRow, int numOfClm, int &currentRank)
 	}	
 
 	//(4.3) Transpose mtxV <- mtxVT'
+	//mtxVT_d will be free inside function
 	mtxV_d = transpose_Den_Mtx(cublasHandler, mtxVT_d, numOfClm, numOfClm);
 	if(debug){
 		printf("\n\n~~mtxV ~~\n\n");
@@ -335,11 +336,41 @@ float* orth(float* mtxZ_d, int numOfRow, int numOfClm, int &currentRank)
 	}	
 
 	//(4.6) Multiply matrix Y <- matrix Z * matrix V Truncated
+	CHECK(cudaMalloc((void**)&mtxY_d, numOfRow * currentRank * sizeof(float)));
 	multiply_Den_ClmM_mtx_mtx(cublasHandler, mtxZ_d, mtxV_trnc_d, mtxY_d, numOfRow, currentRank, numOfClm);
+	
 	if(debug){
 		printf("\n\n~~mtxY ~~\n\n");
 		print_mtx_clm_d(mtxY_d, numOfRow, currentRank);
-	}	
+	}
+
+	//(4.7) Normalize matrix Y_hat <- normalize_Den_Mtx(mtxY_d)
+	normalize_Den_Mtx(mtxY_d, numOfRow, currentRank);
+	if(debug){
+		printf("\n\n~~mtxY hat <- orth(*) ~~\n\n");
+		print_mtx_clm_d(mtxY_d, numOfRow, currentRank);
+	}
+
+	//(4.6) Check orthogonality
+	if(debug){
+		//Check the matrix Y hat column vectors are orthogonal eachother
+		float* mtxI_d = NULL;
+		CHECK(cudaMalloc((void**)&mtxI_d, currentRank * currentRank * sizeof(float)));
+		multiply_Den_ClmM_mtxT_mtx(cublasHandler, mtxY_d, mtxI_d, numOfRow, currentRank);
+		printf("\n\n~~~~Orthogonality Check (should be close to identity matrix)~~\n\n");
+		print_mtx_clm_d(mtxI_d, currentRank, currentRank);
+		CHECK(cudaFree(mtxI_d));
+	}
+
+	//(5) Free memory
+    checkCudaErrors(cusolverDnDestroy(cusolverHandler));
+    checkCudaErrors(cublasDestroy(cublasHandler));
+
+    CHECK(cudaFree(mtxZ_d));
+	CHECK(cudaFree(mtxS_d));
+    CHECK(cudaFree(mtxU_d));
+    CHECK(cudaFree(sngVals_d));
+    CHECK(cudaFree(mtxV_trnc_d));
 
 	return mtxY_d;
 }

@@ -144,8 +144,8 @@ void normalize_mtx_d_Test()
 {
     printf("\n\n~~normalize_mtx_d_Test()~~\n\n");
 
-    // printf("\n\n🔍🔍🔍Test case 1🔍🔍🔍\n");
-    // normalize_Den_Mtx_Case1();
+    printf("\n\n🔍🔍🔍Test case 1🔍🔍🔍\n");
+    normalize_Den_Mtx_Case1();
 
     // printf("\n\n🔍🔍🔍Test case 2🔍🔍🔍\n");
     // normalize_Den_Mtx_Case2();
