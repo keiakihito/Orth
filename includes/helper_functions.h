@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <cuda_runtime.h>
+#include <cusparse.h>
+#include <cusolverDn.h>
 #include <cublas_v2.h>
 #include <cstdlib>
 #include <cmath>
@@ -10,6 +12,8 @@
 
 // helper function CUDA error checking and initialization
 #include "helper_cuda.h"  
+#include "helper_debug.h"
+
 
 #define CHECK(call){ \
     const cudaError_t cuda_ret = call; \
@@ -34,7 +38,7 @@ void validateSol(const float *mtxA_h, const float* x_h, float* rhs, int N);
 //Input: float* mtxZ, int number of Row, int number Of column, int & currentRank
 //Process: the function extracts orthonormal set from the matrix Z
 //Output: float* mtxY_hat, the orthonormal set of matrix Z.
-float* orth(float* mtxZ_d, int numOfRow, int numOfClm, int &currentRank);
+void orth(float** mtxY_hat_d, float* mtxZ_d, int numOfRow, int numOfClm, int &currentRank);
 
 //Input: cusolverDnHandler, int number of row, int number of column, int leading dimensino, 
 //		 float* matrix A, float* matrix U, float* vector singlluar values, float* matrix V tranpose
@@ -86,7 +90,8 @@ void normalize_Den_Mtx(float* mtxY_d, int numOfRow, int numOfCol);
 //Function signatures
 //Generate random SPD dense matrix
 // N is matrix size
-float* generateSPD_DenseMatrix(int N){
+float* generateSPD_DenseMatrix(int N)
+{
 	float* mtx_h = NULL;
 	float* mtx_d = NULL;
 	float* mtxSPD_h = NULL;
@@ -148,7 +153,8 @@ float* generateSPD_DenseMatrix(int N){
 
 
 // N is matrix size
-float* generate_TriDiagMatrix(int N){
+float* generate_TriDiagMatrix(int N)
+{
 
 	//Allocate memoery in Host
 	float* mtx_h = (float*)calloc(N*N, sizeof(float));
@@ -193,7 +199,8 @@ float* generate_TriDiagMatrix(int N){
 
 
 
-void validateSol(const float *mtxA_h, const float* x_h, float* rhs, int N){
+void validateSol(const float *mtxA_h, const float* x_h, float* rhs, int N)
+{
     float rsum, diff, error = 0.0f;
 
     for (int rw_wkr = 0; rw_wkr < N; rw_wkr++){
@@ -217,11 +224,10 @@ void validateSol(const float *mtxA_h, const float* x_h, float* rhs, int N){
 
 
 //Orth functions
-//TO DO implement and test orth function
 //Input: float* mtxZ, int number of Row, int number Of column, int & currentRank
 //Process: the function extracts orthonormal set from the matrix Z
 //Output: float* mtxY_hat, the orthonormal set of matrix Z.
-float* orth(float* mtxZ_d, int numOfRow, int numOfClm, int &currentRank)
+void orth(float** mtxY_hat_d, float* mtxZ_d, int numOfRow, int numOfClm, int &currentRank)
 {	
 	/*
 	Pseudocode
@@ -254,7 +260,7 @@ float* orth(float* mtxZ_d, int numOfRow, int numOfClm, int &currentRank)
 
 	const float THREASHOLD = 1e-5;
 
-	bool debug = true;
+	bool debug = false;
 
 
 
@@ -336,6 +342,7 @@ float* orth(float* mtxZ_d, int numOfRow, int numOfClm, int &currentRank)
 	}	
 
 	//(4.6) Multiply matrix Y <- matrix Z * matrix V Truncated
+	if(!mtxY_d){cudaFree(mtxY_d);}
 	CHECK(cudaMalloc((void**)&mtxY_d, numOfRow * currentRank * sizeof(float)));
 	multiply_Den_ClmM_mtx_mtx(cublasHandler, mtxZ_d, mtxV_trnc_d, mtxY_d, numOfRow, currentRank, numOfClm);
 	
@@ -355,24 +362,36 @@ float* orth(float* mtxZ_d, int numOfRow, int numOfClm, int &currentRank)
 	if(debug){
 		//Check the matrix Y hat column vectors are orthogonal eachother
 		float* mtxI_d = NULL;
+		float* mtxY_cpy_d = NULL;
 		CHECK(cudaMalloc((void**)&mtxI_d, currentRank * currentRank * sizeof(float)));
-		multiply_Den_ClmM_mtxT_mtx(cublasHandler, mtxY_d, mtxI_d, numOfRow, currentRank);
+		CHECK(cudaMalloc((void**)&mtxY_cpy_d, numOfRow * currentRank * sizeof(float)));
+	    CHECK(cudaMemcpy(mtxY_cpy_d, mtxY_d, numOfRow * currentRank * sizeof(float), cudaMemcpyDeviceToDevice));
+
+		//After this function mtxY_cpy_d will be free.
+		multiply_Den_ClmM_mtxT_mtx(cublasHandler, mtxY_cpy_d, mtxI_d, numOfRow, currentRank);
+		
 		printf("\n\n~~~~Orthogonality Check (should be close to identity matrix)~~\n\n");
 		print_mtx_clm_d(mtxI_d, currentRank, currentRank);
 		CHECK(cudaFree(mtxI_d));
 	}
 
-	//(5) Free memory
+	//(5)Pass the address to the provided pointer
+	*mtxY_hat_d = mtxY_d;
+
+	if(debug){
+		printf("\n\n~~mtxY hat <- orth(*) ~~\n\n");
+		print_mtx_clm_d(*mtxY_hat_d, numOfRow, currentRank);
+	}
+
+
+	//(6) Free memory
     checkCudaErrors(cusolverDnDestroy(cusolverHandler));
     checkCudaErrors(cublasDestroy(cublasHandler));
 
-    CHECK(cudaFree(mtxZ_d));
 	CHECK(cudaFree(mtxS_d));
     CHECK(cudaFree(mtxU_d));
     CHECK(cudaFree(sngVals_d));
     CHECK(cudaFree(mtxV_trnc_d));
-
-	return mtxY_d;
 }
 
 //Input: cusolverDnHandler, int number of row, int number of column, int leading dimensino, 
