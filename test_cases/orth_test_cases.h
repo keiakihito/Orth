@@ -1601,7 +1601,9 @@ void normalize_Den_Mtx_Case1()
 
 
     //Normalize mtxY
-    normalize_Den_Mtx(mtxY_d, ROW_A, newRank);
+    // normalize_Den_Mtx(mtxY_d, ROW_A, newRank);
+    normalize_Den_Mtx(cublasHandler, mtxY_d, ROW_A, newRank);
+
     if(debug){
         printf("\n\n~~mtxY_hat~~\n");
         print_mtx_clm_d(mtxY_d, ROW_A, newRank);
@@ -1735,7 +1737,8 @@ void normalize_Den_Mtx_Case2()
 
 
     //Normalize mtxY
-    normalize_Den_Mtx(mtxY_d, ROW_A, newRank);
+    // normalize_Den_Mtx(mtxY_d, ROW_A, newRank);
+    normalize_Den_Mtx(cublasHandler, mtxY_d, ROW_A, newRank);
     if(debug){
         printf("\n\n~~mtxY_hat~~\n");
         print_mtx_clm_d(mtxY_d, ROW_A, newRank);
@@ -1872,7 +1875,8 @@ void normalize_Den_Mtx_Case3()
 
 
     //Normalize mtxY
-    normalize_Den_Mtx(mtxY_d, ROW_A, newRank);
+    // normalize_Den_Mtx(mtxY_d, ROW_A, newRank);
+    normalize_Den_Mtx(cublasHandler, mtxY_d, ROW_A, newRank);
     if(debug){
         printf("\n\n~~mtxY_hat~~\n");
         print_mtx_clm_d(mtxY_d, ROW_A, newRank);
@@ -2010,7 +2014,8 @@ void normalize_Den_Mtx_Case4()
 
 
     //Normalize mtxY
-    normalize_Den_Mtx(mtxY_d, ROW_A, newRank);
+    // normalize_Den_Mtx(mtxY_d, ROW_A, newRank);
+    normalize_Den_Mtx(cublasHandler, mtxY_d, ROW_A, newRank);
     if(debug){
         printf("\n\n~~mtxY_hat~~\n");
         print_mtx_clm_d(mtxY_d, ROW_A, newRank);
@@ -2161,7 +2166,8 @@ void normalize_Den_Mtx_Case5()
 
 
     //Normalize mtxY
-    normalize_Den_Mtx(mtxY_d, ROW_A, newRank);
+    // normalize_Den_Mtx(mtxY_d, ROW_A, newRank);
+    normalize_Den_Mtx(cublasHandler, mtxY_d, ROW_A, newRank);
     if(debug){
         printf("\n\n~~mtxY_hat~~\n");
         print_mtx_clm_d(mtxY_d, ROW_A, newRank);
@@ -2209,6 +2215,7 @@ void orth_test_Case1()
     int crntRank = 3;
 
     float* mtxZ_d = NULL;
+    float* mtxY_hat_d = NULL;
 
     bool debug = true;
 
@@ -2222,10 +2229,13 @@ void orth_test_Case1()
     }
 
 
-    float* mtxY_hat = orth(mtxZ_d, numOfRow, numOfClm, crntRank);
+    orth(&mtxY_hat_d, mtxZ_d, numOfRow, numOfClm, crntRank);
 
-    // printf("\n\n~~mtxY_Hat~~\n\n");
-    // print_mtx_clm_d(mtxY_hat, numOfRow, crntRank);
+    if(mtxY_hat_d != NULL){
+        printf("\n\n~~mtxY_Hat~~\n\n");
+        print_mtx_clm_d(mtxY_hat_d, numOfRow, crntRank);
+    }
+    
     printf("\n\n~~Current Rarnk = %d~~\n\n", crntRank);
 
 }// end of orth_test_Case1()
@@ -2246,6 +2256,7 @@ void orth_test_Case2()
     int crntRank = 4;
 
     float* mtxZ_d = NULL;
+    float* mtxY_hat_d = NULL;
 
     bool debug = true;
 
@@ -2259,10 +2270,10 @@ void orth_test_Case2()
     }
 
 
-    float* mtxY_hat = orth(mtxZ_d, numOfRow, numOfClm, crntRank);
+    orth(&mtxY_hat_d, mtxZ_d, numOfRow, numOfClm, crntRank);
 
-    // printf("\n\n~~mtxY_Hat~~\n\n");
-    // print_mtx_clm_d(mtxY_hat, numOfRow, crntRank);
+    printf("\n\n~~mtxY_Hat~~\n\n");
+    print_mtx_clm_d(mtxY_hat_d, numOfRow, crntRank);
     printf("\n\n~~Current Rarnk = %d~~\n\n", crntRank);
 }// end of orth_test_Case2()
 
@@ -2285,6 +2296,7 @@ void orth_test_Case3()
     int crntRank = 6;
 
     float* mtxZ_d = NULL;
+    float* mtxY_hat_d = NULL;
 
     bool debug = true;
 
@@ -2297,10 +2309,11 @@ void orth_test_Case3()
         print_mtx_clm_d(mtxZ_d, numOfRow, numOfClm);
     }
 
-    float* mtxY_hat = orth(mtxZ_d, numOfRow, numOfClm, crntRank);
 
-    // printf("\n\n~~mtxY_Hat~~\n\n");
-    // print_mtx_clm_d(mtxY_hat, numOfRow, crntRank);
+    orth(&mtxY_hat_d, mtxZ_d, numOfRow, numOfClm, crntRank);
+
+    printf("\n\n~~mtxY_Hat~~\n\n");
+    print_mtx_clm_d(mtxY_hat_d, numOfRow, crntRank);
     printf("\n\n~~Current Rarnk = %d~~\n\n", crntRank);
 
 }// end of orth_test_Case3()
@@ -2327,6 +2340,7 @@ void orth_test_Case4()
     int crntRank = 8;
 
     float* mtxZ_d = NULL;
+    float* mtxY_hat_d = NULL;
 
     bool debug = true;
 
@@ -2339,10 +2353,11 @@ void orth_test_Case4()
         print_mtx_clm_d(mtxZ_d, numOfRow, numOfClm);
     }
 
-    float* mtxY_hat = orth(mtxZ_d, numOfRow, numOfClm, crntRank);
 
-    // printf("\n\n~~mtxY_Hat~~\n\n");
-    // print_mtx_clm_d(mtxY_hat, numOfRow, crntRank);
+    orth(&mtxY_hat_d, mtxZ_d, numOfRow, numOfClm, crntRank);
+
+    printf("\n\n~~mtxY_Hat~~\n\n");
+    print_mtx_clm_d(mtxY_hat_d, numOfRow, crntRank);
     printf("\n\n~~Current Rarnk = %d~~\n\n", crntRank);
 
 }// end of orth_test_Case4()
@@ -2379,6 +2394,7 @@ void orth_test_Case5()
     int crntRank = 15;
 
     float* mtxZ_d = NULL;
+    float* mtxY_hat_d = NULL;
 
     bool debug = true;
 
@@ -2391,10 +2407,11 @@ void orth_test_Case5()
         print_mtx_clm_d(mtxZ_d, numOfRow, numOfClm);
     }
 
-    float* mtxY_hat = orth(mtxZ_d, numOfRow, numOfClm, crntRank);
 
-    // printf("\n\n~~mtxY_Hat~~\n\n");
-    // print_mtx_clm_d(mtxY_hat, numOfRow, crntRank);
+    orth(&mtxY_hat_d, mtxZ_d, numOfRow, numOfClm, crntRank);
+
+    printf("\n\n~~mtxY_Hat~~\n\n");
+    print_mtx_clm_d(mtxY_hat_d, numOfRow, crntRank);
     printf("\n\n~~Current Rarnk = %d~~\n\n", crntRank);
 
 }// end of orth_test_Case5()

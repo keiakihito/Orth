@@ -54,9 +54,9 @@ int main(int argc, char** argv)
 
     // truncate_Den_Mtx_Test();
 
-    // normalize_mtx_d_Test();
+    normalize_mtx_d_Test();
 
-    orth_test();
+    // orth_test();
 
 
     
@@ -144,8 +144,8 @@ void normalize_mtx_d_Test()
 {
     printf("\n\n~~normalize_mtx_d_Test()~~\n\n");
 
-    printf("\n\n🔍🔍🔍Test case 1🔍🔍🔍\n");
-    normalize_Den_Mtx_Case1();
+    // printf("\n\n🔍🔍🔍Test case 1🔍🔍🔍\n");
+    // normalize_Den_Mtx_Case1();
 
     // printf("\n\n🔍🔍🔍Test case 2🔍🔍🔍\n");
     // normalize_Den_Mtx_Case2();
@@ -156,8 +156,8 @@ void normalize_mtx_d_Test()
     // printf("\n\n🔍🔍🔍Test case 4🔍🔍🔍\n");
     // normalize_Den_Mtx_Case4();
 
-    // printf("\n\n🔍🔍🔍Test case 5🔍🔍🔍\n");
-    // normalize_Den_Mtx_Case5();
+    printf("\n\n🔍🔍🔍Test case 5🔍🔍🔍\n");
+    normalize_Den_Mtx_Case5();
 
 
 } // end of normalize_mtx_d_Test
@@ -170,8 +170,8 @@ void orth_test()
     // printf("\n\n🔍🔍🔍Test case 1🔍🔍🔍\n");
     // orth_test_Case1();
     
-    printf("\n\n🔍🔍🔍Test case 2🔍🔍🔍\n");
-    orth_test_Case2();
+    // printf("\n\n🔍🔍🔍Test case 2🔍🔍🔍\n");
+    // orth_test_Case2();
 
     // printf("\n\n🔍🔍🔍Test case 3🔍🔍🔍\n");
     // orth_test_Case3();
@@ -179,6 +179,6 @@ void orth_test()
     // printf("\n\n🔍🔍🔍Test case 4🔍🔍🔍\n");
     // orth_test_Case4();
 
-    // printf("\n\n🔍🔍🔍Test case 5🔍🔍🔍\n");
-    // orth_test_Case5();
+    printf("\n\n🔍🔍🔍Test case 5🔍🔍🔍\n");
+    orth_test_Case5();
 }
